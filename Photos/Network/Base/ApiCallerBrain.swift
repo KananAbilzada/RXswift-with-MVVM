@@ -42,6 +42,7 @@ public extension Request {
         guard let url = components.url else {
             preconditionFailure("Invalid url components")
         }
+
         var request = URLRequest(url: url)
         request.allHTTPHeaderFields = headers
         request.httpMethod          = method.rawValue

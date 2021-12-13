@@ -7,10 +7,11 @@
 
 import UIKit
 import RxSwift
+import RxCocoa
 
 class PhotosViewController: UIViewController, Storyboarded {
     // MARK: - Variables
-    private var viewModel: PhotoListViewModel?
+    private var viewModel: PhotoListViewModel!
     private let disposeBag = DisposeBag()
     private var cachedImages: [Int: UIImage] = [:]
     
@@ -41,9 +42,19 @@ extension PhotosViewController {
                                 forCellWithReuseIdentifier: PhotoCollectionViewCell.identifier)
         
         collectionView.collectionViewLayout = createCollectionViewLayout()
-        
-        collectionView.delegate   = self
-        collectionView.dataSource = self
+    }
+    
+    func createCollectionViewLayout() -> UICollectionViewFlowLayout {
+        let layout = UICollectionViewFlowLayout()
+        layout.scrollDirection = .vertical
+        layout.itemSize = Dimensions.photosItemSize
+        let numberOfCellsInRow = floor(Dimensions.screenWidth / Dimensions.photosItemSize.width)
+        let inset = (Dimensions.screenWidth - (numberOfCellsInRow * Dimensions.photosItemSize.width)) / (numberOfCellsInRow + 1)
+        layout.sectionInset = .init(top: inset,
+                                    left: inset,
+                                    bottom: inset,
+                                    right: inset)
+        return layout
     }
 }
 
@@ -52,22 +63,35 @@ extension PhotosViewController {
     private func setupViewModel() {
         viewModel = PhotoListViewModel()
         
-        bindPhotoListToUI()
+        bindCollectionView()
         bindImageLoader()
     }
 }
 
 // MARK: - Bind ViewModel To UI
 extension PhotosViewController {
-    /// bind all loaded photos
-    private func bindPhotoListToUI() {
-        viewModel?.photoList
-            .subscribe(onNext: { [weak self] data in
-                self?.runInMainThread {
-                    self?.collectionView.reloadData()
-                }
-            })
+    
+    private func bindCollectionView() {
+        // bind items to collectionView
+        viewModel.photoList
+            .filter({ !$0.isEmpty })
+            .bind(to: collectionView.rx
+                    .items(cellIdentifier: PhotoCollectionViewCell.identifier,
+                           cellType: PhotoCollectionViewCell.self)) { row, model, cell in
+                cell.activityIndicator.startAnimating()
+            }
             .disposed(by: disposeBag)
+        
+        // bind willDisplayCell
+        collectionView.rx.willDisplayCell
+            .observeOn(MainScheduler.instance)
+            .map({ $0.is })
+            .subscribe { cell, indexPath in
+                print("cell: ", indexPath)
+            }
+        
+        // bind selected model
+
     }
     
     /// bind loaded image to cell
@@ -100,16 +124,16 @@ extension PhotosViewController: UICollectionViewDelegate, UICollectionViewDataSo
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return viewModel?.photoList.value.count ?? 0
     }
-        
+
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: PhotoCollectionViewCell.identifier,
                                                             for: indexPath) as? PhotoCollectionViewCell else {
             fatalError()
         }
-        
+
         return cell
     }
-    
+
     func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
         if let photoCell = cell as? PhotoCollectionViewCell {
             if let image = self.cachedImages[indexPath.row] {
@@ -121,19 +145,7 @@ extension PhotosViewController: UICollectionViewDelegate, UICollectionViewDataSo
             }
         }
     }
-    
-    func createCollectionViewLayout() -> UICollectionViewFlowLayout {
-        let layout = UICollectionViewFlowLayout()
-        layout.scrollDirection = .vertical
-        layout.itemSize = Dimensions.photosItemSize
-        let numberOfCellsInRow = floor(Dimensions.screenWidth / Dimensions.photosItemSize.width)
-        let inset = (Dimensions.screenWidth - (numberOfCellsInRow * Dimensions.photosItemSize.width)) / (numberOfCellsInRow + 1)
-        layout.sectionInset = .init(top: inset,
-                                    left: inset,
-                                    bottom: inset,
-                                    right: inset)
-        return layout
-    }
+
 }
 
 // MARK: - UICollectionViewDelegateFlowLayout
