@@ -36,5 +36,19 @@ class PhotoCollectionViewCell: UICollectionViewCell {
         return UINib(nibName: identifier,
                      bundle: Bundle.main)
     }
+    
+    
+    
+    /// show image when image downloaded successfully
+    func animateCellWithImage(_ cell: PhotoCollectionViewCell, _ image: UIImage) {
+        cell.activityIndicator.stopAnimating()
+        cell.transform = CGAffineTransform(rotationAngle: 60)
+        
+        UIView.animate(withDuration: 0.5, delay: 0, usingSpringWithDamping: 0.8, initialSpringVelocity: 0.5, options: .curveEaseInOut, animations: {
+            cell.transform = .identity
+        }, completion: nil)
+        
+        cell.imageView.image = image
+    }
 
 }

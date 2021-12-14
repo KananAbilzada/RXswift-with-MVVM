@@ -6,10 +6,13 @@
 //
 
 import Foundation
-import RxSwift
+import RxCocoa
 
 protocol PhotoListViewModelActions: AnyObject {
     func fetchImages(
         currentPage: Int
     )
+    
+    var photoList       : BehaviorRelay<[PhotoListModel]> { get }
+    var imageDownloaded : PublishRelay<(Int, UIImage?)> { get }
 }

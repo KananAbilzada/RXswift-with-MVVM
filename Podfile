@@ -6,7 +6,12 @@ target 'Photos' do
   use_frameworks!
 
   # Pods for Photos
+  
+  # For Reactive programming
   pod 'RxSwift', '5.1.0'
   pod 'RxCocoa', '5.1.0'
+  
+  # ImageViewer
+  pod 'SimpleImageViewer', '~> 1.1.1'
 
 end

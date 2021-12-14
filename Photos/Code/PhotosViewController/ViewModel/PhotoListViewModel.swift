@@ -18,7 +18,8 @@ class PhotoListViewModel: PhotoListViewModelActions {
     private let photoService = PhotoService.shared
     private let disposeBag   = DisposeBag()
     
-    var photoList = BehaviorRelay<[PhotoListModel]>(value: [])
+    var photoList       = BehaviorRelay<[PhotoListModel]>(value: [])
+    var imageDownloaded = PublishRelay<(Int, UIImage?)>()
     
     init() {
         self.fetchImages(currentPage: self.currentPage.value)
@@ -28,7 +29,6 @@ class PhotoListViewModel: PhotoListViewModelActions {
 extension PhotoListViewModel {
     /// Loading images from given api
     func fetchImages(currentPage: Int) {
-
         self.photoService.getPhotos(currentPage: "\(currentPage)") { [weak self] response in
             switch response {
             case .failure(let e):
@@ -43,11 +43,11 @@ extension PhotoListViewModel {
     
     /// loading image from given string
     func loadImageFromGivenItem(with index: Int) {
-//        let givenElementString = photoList.value[index].urls?.small ?? ""
-//
-//        imageLoaderService.loadRemoteImageFrom(urlString: givenElementString) { [weak self] image in
-//            print(UInt(index))
-//            self?.imageRetrievedSuccess.value = (index, image)
-//        }
+        let givenElementString = photoList.value[index].urls?.regular ?? ""
+
+        imageLoaderService.loadRemoteImageFrom(urlString: givenElementString) { [weak self] image in
+            print("image downloaded: \(index): ", image?.description)
+            self?.imageDownloaded.accept((index, image))
+        }
     }
 }

@@ -8,6 +8,7 @@
 import UIKit
 import RxSwift
 import RxCocoa
+import SimpleImageViewer
 
 class PhotosViewController: UIViewController, Storyboarded {
     // MARK: - Variables
@@ -72,93 +73,63 @@ extension PhotosViewController {
 extension PhotosViewController {
     
     private func bindCollectionView() {
-        // bind items to collectionView
+        // MARK: Bind photoList to collectionView
         viewModel.photoList
             .filter({ !$0.isEmpty })
             .bind(to: collectionView.rx
                     .items(cellIdentifier: PhotoCollectionViewCell.identifier,
-                           cellType: PhotoCollectionViewCell.self)) { row, model, cell in
-                cell.activityIndicator.startAnimating()
-            }
+                           cellType: PhotoCollectionViewCell.self)) { _, _, _ in}
             .disposed(by: disposeBag)
         
-        // bind willDisplayCell
+        // MARK: Bind willDisplayCell
         collectionView.rx.willDisplayCell
             .observeOn(MainScheduler.instance)
-            .map({ $0.is })
-            .subscribe { cell, indexPath in
-                print("cell: ", indexPath)
-            }
-        
-        // bind selected model
+            .map({ ($0.cell as! PhotoCollectionViewCell, $0.at.item) })
+            .subscribe { [weak self] cell, indexPath in
+                guard let self = self else {return}
+                if let cachedImage = self.cachedImages[indexPath] {
+                    /// use image from cached images
+                    cell.imageView.image = cachedImage
+                } else {
+                    /// start animation for download image
+                    cell.activityIndicator.startAnimating()
 
+                    /// download image
+                    self.viewModel.loadImageFromGivenItem(with: indexPath)
+                }
+                
+            }
+            .disposed(by: disposeBag)
+            
+        // MARK: Bind selected model
+        collectionView.rx.modelSelected(PhotoCollectionViewCell.self)
+            .subscribe(onNext: { cell in
+                let configuration = ImageViewerConfiguration { config in
+                    config.imageView = cell.imageView
+                }
+
+                let imageViewerController = ImageViewerController(configuration: configuration)
+
+                self.present(imageViewerController, animated: true)
+            })
+            .disposed(by: disposeBag)
     }
     
     /// bind loaded image to cell
     private func bindImageLoader() {
-//        viewModel?.imageRetrievedSuccess.bind({ [weak self] (index, image) in
-//            self?.runInMainThread {
-//                print("imageRetrievedSuccess")
-//                if let cell = self?.collectionView.cellForItem(at: IndexPath(item: index, section: 0)) as? PhotoCollectionViewCell {
-//                    // 1
-//                    cell.activityIndicator.stopAnimating()
-//
-//                    // 2
-//                    cell.transform = CGAffineTransform(scaleX: 0.1, y: 0.1)
-//                    UIView.animate(withDuration: 0.45) {
-//                        cell.transform = .identity
-//                    }
-//
-//                    // 3
-//                    cell.imageView.image = image
-//                }
-//            }
-//
-//            self?.cachedImages[index] = image
-//        })
-    }
-}
+        viewModel.imageDownloaded
+            .observeOn(MainScheduler.instance)
+            .filter({ $0.1 != nil })
+            .map({ ($0.0, $0.1!) })
+            .subscribe(onNext: { [unowned self] index, image in
+                guard let cell = collectionView.cellForItem(at: IndexPath(item: index, section: 0)) as? PhotoCollectionViewCell else {
+                    return
+                }
 
-// MARK: - UICollectionViewDelegate, UICollectionViewDataSource
-extension PhotosViewController: UICollectionViewDelegate, UICollectionViewDataSource {
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return viewModel?.photoList.value.count ?? 0
-    }
+                cell.animateCellWithImage(cell, image)
 
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: PhotoCollectionViewCell.identifier,
-                                                            for: indexPath) as? PhotoCollectionViewCell else {
-            fatalError()
-        }
-
-        return cell
-    }
-
-    func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
-        if let photoCell = cell as? PhotoCollectionViewCell {
-            if let image = self.cachedImages[indexPath.row] {
-                photoCell.imageView.image = image
-            } else {
-                // load new image
-                viewModel?.loadImageFromGivenItem(with: indexPath.row)
-                photoCell.activityIndicator.startAnimating()
-            }
-        }
-    }
-
-}
-
-// MARK: - UICollectionViewDelegateFlowLayout
-extension PhotosViewController : UICollectionViewDelegateFlowLayout {
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
-        let cellCount = 2
-
-        let totalCellWidth = (Int(self.view.frame.size.width / 2) - 10) * cellCount
-        let totalSpacingWidth = 10 * (cellCount - 1)
-
-        let leftInset = (collectionView.frame.size.width - CGFloat(totalCellWidth + totalSpacingWidth)) / 2
-        let rightInset = leftInset
-
-        return UIEdgeInsets(top: 0, left: leftInset, bottom: 0, right: rightInset)
+                self.cachedImages[index] = image
+            })
+            .disposed(by: disposeBag)
     }
 }
