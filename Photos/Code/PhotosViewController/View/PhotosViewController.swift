@@ -16,8 +16,13 @@ class PhotosViewController: UIViewController, Storyboarded {
     private let disposeBag = DisposeBag()
     private var cachedImages: [Int: UIImage] = [:]
     
-    // MARK: - IBOutlets
-    @IBOutlet weak var collectionView: UICollectionView!
+    lazy var collectionView: UICollectionView = {
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: createCollectionViewLayout())
+        collectionView.backgroundColor = .white
+        collectionView.register(PhotoCollectionViewCell.self, forCellWithReuseIdentifier: PhotoCollectionViewCell.identifier)
+        collectionView.translatesAutoresizingMaskIntoConstraints = false
+        return collectionView
+    }()
     
     // MARK: - Main methods
     override func viewDidLoad() {
@@ -39,6 +44,20 @@ extension PhotosViewController {
     }
         
     private func setupCollectionView() {
+        self.view.addSubview(collectionView)
+
+        NSLayoutConstraint.activate([
+            collectionView.leftAnchor
+                .constraint(equalTo: self.view.leftAnchor),
+            collectionView.topAnchor
+                .constraint(equalTo: self.view.safeAreaLayoutGuide.topAnchor),
+            collectionView.rightAnchor
+                .constraint(equalTo: self.view.rightAnchor),
+            collectionView.bottomAnchor
+                .constraint(equalTo: self.view.safeAreaLayoutGuide.bottomAnchor)
+        ])
+        
+        
         collectionView.register(PhotoCollectionViewCell.nib(),
                                 forCellWithReuseIdentifier: PhotoCollectionViewCell.identifier)
         
@@ -48,6 +67,7 @@ extension PhotosViewController {
     func createCollectionViewLayout() -> UICollectionViewFlowLayout {
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .vertical
+        layout.collectionView?.allowsSelection = true
         layout.itemSize = Dimensions.photosItemSize
         let numberOfCellsInRow = floor(Dimensions.screenWidth / Dimensions.photosItemSize.width)
         let inset = (Dimensions.screenWidth - (numberOfCellsInRow * Dimensions.photosItemSize.width)) / (numberOfCellsInRow + 1)
@@ -81,7 +101,7 @@ extension PhotosViewController {
                            cellType: PhotoCollectionViewCell.self)) { _, _, _ in}
             .disposed(by: disposeBag)
         
-        // MARK: Bind willDisplayCell
+//         MARK: Bind willDisplayCell
         collectionView.rx.willDisplayCell
             .observeOn(MainScheduler.instance)
             .map({ ($0.cell as! PhotoCollectionViewCell, $0.at.item) })
@@ -97,22 +117,35 @@ extension PhotosViewController {
                     /// download image
                     self.viewModel.loadImageFromGivenItem(with: indexPath)
                 }
-                
+
             }
             .disposed(by: disposeBag)
-            
-        // MARK: Bind selected model
-        collectionView.rx.modelSelected(PhotoCollectionViewCell.self)
-            .subscribe(onNext: { cell in
-                let configuration = ImageViewerConfiguration { config in
-                    config.imageView = cell.imageView
+
+//        // MARK: Bind selected model
+        /// showing full screen when image clicked
+        collectionView.rx.itemSelected
+            .map({ $0.item })
+            .subscribe { [weak self] indexPath in
+                let row = indexPath.element ?? 0
+                
+                if let cell = self?.collectionView.cellForItem(at: IndexPath(item: row, section: 0) ) as? PhotoCollectionViewCell {
+                    let configuration = ImageViewerConfiguration { config in
+                        config.imageView = cell.imageView
+                    }
+
+                    let imageViewerController = ImageViewerController(configuration: configuration)
+
+                    self?.present(imageViewerController, animated: true)
                 }
-
-                let imageViewerController = ImageViewerController(configuration: configuration)
-
-                self.present(imageViewerController, animated: true)
-            })
+            }
             .disposed(by: disposeBag)
+
+        // MARK: Trigger scroll view when ended
+//        collectionView.rx.contentOffset
+//            .subscribe {
+//                print("offset now: ", $0.element)
+//            }
+//            .disposed(by: disposeBag)
     }
     
     /// bind loaded image to cell

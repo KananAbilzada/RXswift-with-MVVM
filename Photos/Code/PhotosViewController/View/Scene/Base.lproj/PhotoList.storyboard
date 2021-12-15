@@ -16,33 +16,10 @@
                     <view key="view" contentMode="scaleToFill" id="8bC-Xf-vdC">
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <subviews>
-                            <collectionView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" dataMode="prototypes" translatesAutoresizingMaskIntoConstraints="NO" id="rAU-fy-bpL">
-                                <rect key="frame" x="0.0" y="140" width="414" height="722"/>
-                                <color key="backgroundColor" systemColor="systemBackgroundColor"/>
-                                <collectionViewFlowLayout key="collectionViewLayout" automaticEstimatedItemSize="YES" minimumLineSpacing="10" minimumInteritemSpacing="10" id="dMh-mM-pzh">
-                                    <size key="itemSize" width="157" height="156"/>
-                                    <size key="headerReferenceSize" width="0.0" height="0.0"/>
-                                    <size key="footerReferenceSize" width="0.0" height="0.0"/>
-                                    <inset key="sectionInset" minX="0.0" minY="0.0" maxX="0.0" maxY="0.0"/>
-                                </collectionViewFlowLayout>
-                                <cells/>
-                            </collectionView>
-                        </subviews>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
-                        <constraints>
-                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="bottom" secondItem="rAU-fy-bpL" secondAttribute="bottom" id="870-uf-9G4"/>
-                            <constraint firstItem="rAU-fy-bpL" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" id="FDC-QB-niN"/>
-                            <constraint firstItem="rAU-fy-bpL" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" id="QkR-S9-bMk"/>
-                            <constraint firstItem="rAU-fy-bpL" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" id="VXq-jT-xq3"/>
-                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="rAU-fy-bpL" secondAttribute="trailing" id="alK-Cq-n6y"/>
-                        </constraints>
                     </view>
                     <navigationItem key="navigationItem" title="Photos" id="iRP-bh-pho"/>
-                    <connections>
-                        <outlet property="collectionView" destination="rAU-fy-bpL" id="EfC-Xi-Ci8"/>
-                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
             </objects>

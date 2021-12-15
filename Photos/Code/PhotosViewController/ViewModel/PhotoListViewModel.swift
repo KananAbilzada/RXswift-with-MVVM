@@ -46,7 +46,7 @@ extension PhotoListViewModel {
         let givenElementString = photoList.value[index].urls?.regular ?? ""
 
         imageLoaderService.loadRemoteImageFrom(urlString: givenElementString) { [weak self] image in
-            print("image downloaded: \(index): ", image?.description)
+            print("image downloaded: \(index): ", image?.description ?? "")
             self?.imageDownloaded.accept((index, image))
         }
     }
