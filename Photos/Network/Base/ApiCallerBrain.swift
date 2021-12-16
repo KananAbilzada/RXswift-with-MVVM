@@ -59,8 +59,7 @@ public struct DataLoader {
 
         let urlSession = URLSession(configuration: .default)
         
-        print(" \n <<<<<<< REQUEST: ")
-        print(urlRequest.description)
+        print(" \n <<<<<<< REQUEST: ", urlRequest.description)
         print(" \n <<<<<<< >>>>>>>>> ")
         
         let task = urlSession.dataTask(with: urlRequest) {  data, urlResponse, error in
@@ -71,8 +70,7 @@ public struct DataLoader {
                 if let data = data {
                     do {
                         // write response data for debug
-                        print(" \n <<<<<<< RESPONSE: ")
-                        print(String(data: data, encoding: .utf8))
+                        print(" \n <<<<<<< RESPONSE: ", String(data: data, encoding: .utf8) ?? "")
                         print(" \n <<<<<<< >>>>>>>>> ")
                         
                         let decodedData = try decoder(with: data, decodable: decodable)

@@ -15,4 +15,5 @@ protocol PhotoListViewModelActions: AnyObject {
     
     var photoList       : BehaviorRelay<[PhotoListModel]> { get }
     var imageDownloaded : PublishRelay<(Int, UIImage?)> { get }
+    var scrollEnded     : PublishRelay<Void> { get }
 }

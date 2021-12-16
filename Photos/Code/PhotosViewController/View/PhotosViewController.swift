@@ -107,17 +107,21 @@ extension PhotosViewController {
             .map({ ($0.cell as! PhotoCollectionViewCell, $0.at.item) })
             .subscribe { [weak self] cell, indexPath in
                 guard let self = self else {return}
+                
+                print("indexPath: ", indexPath)
+                
                 if let cachedImage = self.cachedImages[indexPath] {
                     /// use image from cached images
                     cell.imageView.image = cachedImage
                 } else {
                     /// start animation for download image
                     cell.activityIndicator.startAnimating()
+                    cell.imageView.image = nil
 
                     /// download image
                     self.viewModel.loadImageFromGivenItem(with: indexPath)
                 }
-
+                
             }
             .disposed(by: disposeBag)
 
@@ -141,11 +145,20 @@ extension PhotosViewController {
             .disposed(by: disposeBag)
 
         // MARK: Trigger scroll view when ended
-//        collectionView.rx.contentOffset
-//            .subscribe {
-//                print("offset now: ", $0.element)
-//            }
-//            .disposed(by: disposeBag)
+        collectionView.rx.willDisplayCell
+            .filter({
+                let currentSection = $0.at.section
+                let currentItem    = $0.at.row
+                let allCellSection = self.collectionView.numberOfSections
+                let numberOfItem   = self.collectionView.numberOfItems(inSection: currentSection)
+
+                return currentSection == allCellSection - 1
+                                        &&
+                       currentItem >= numberOfItem - 1
+            })
+            .map({ _ in () })
+            .bind(to: viewModel.scrollEnded)
+            .disposed(by: disposeBag)
     }
     
     /// bind loaded image to cell

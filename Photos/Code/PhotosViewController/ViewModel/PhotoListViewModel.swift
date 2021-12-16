@@ -20,9 +20,11 @@ class PhotoListViewModel: PhotoListViewModelActions {
     
     var photoList       = BehaviorRelay<[PhotoListModel]>(value: [])
     var imageDownloaded = PublishRelay<(Int, UIImage?)>()
+    var scrollEnded     = PublishRelay<Void>()
     
     init() {
         self.fetchImages(currentPage: self.currentPage.value)
+        bindScrollEnded()
     }
 }
 
@@ -36,7 +38,16 @@ extension PhotoListViewModel {
                 self?.photoList.accept([])
                 
             case .success(let data):
-                self?.photoList.accept(data)
+                let existData = self?.photoList.value ?? []
+                
+                /// add new data to nil array
+                if existData.isEmpty {
+                    self?.photoList.accept(data)
+                } else {
+                    /// update exist data with adding new data
+                    self?.photoList.accept(existData + data)
+                }
+                
             }
         }
     }
@@ -49,5 +60,17 @@ extension PhotoListViewModel {
             print("image downloaded: \(index): ", image?.description ?? "")
             self?.imageDownloaded.accept((index, image))
         }
+    }
+    
+    /// trigger when scroll ended --|-- load more images
+    func bindScrollEnded() {
+        scrollEnded
+            .subscribe { [weak self] _ in
+                if let currentPage = self?.currentPage.value {
+                    self?.currentPage.accept(currentPage + 1)
+                    self?.fetchImages(currentPage: self?.currentPage.value ?? 0)
+                }
+            }
+            .disposed(by: disposeBag)
     }
 }
